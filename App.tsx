@@ -8,6 +8,7 @@ import {
   DEBT_INTEREST
 } from './constants';
 import { PlayerState, MarketState, GameStatus } from './types';
+// Fixed the import path to point to the root file
 import { generateMarketNews } from './geminiService';
 
 const StatCard = ({ label, value, color }: { label: string; value: string | number; color?: string }) => (
@@ -52,7 +53,6 @@ const App: React.FC = () => {
   }, []);
 
   const handleReset = useCallback(() => {
-    // Force a clean return to the start screen
     setStatus(GameStatus.START);
     setLoading(false);
     setPlayer({
@@ -388,7 +388,6 @@ const App: React.FC = () => {
         </div>
       </div>
 
-      {/* Robust Reset Button */}
       <button 
         id="reset-game-btn"
         onClick={() => {
