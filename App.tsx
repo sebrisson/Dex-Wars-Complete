@@ -11,7 +11,7 @@ import { PlayerState, MarketState, GameStatus } from './types';
 import { generateMarketNews } from './geminiService';
 
 const StatCard = ({ label, value, color }: { label: string; value: string | number; color?: string }) => (
-  <div className="bg-slate-900/80 border border-slate-800 p-3 rounded-lg flex flex-col items-center justify-center shadow-lg shadow-black/50">
+  <div className="bg-slate-900/80 border border-slate-800 p-3 rounded-lg flex flex-col items-center justify-center shadow-lg shadow-black/50 hover:border-slate-700 transition-colors">
     <span className="text-[10px] text-slate-500 uppercase tracking-widest font-bold">{label}</span>
     <span className={`text-lg font-bold ${color || 'text-white'}`}>{value}</span>
   </div>
@@ -52,6 +52,7 @@ const App: React.FC = () => {
   }, []);
 
   const handleReset = useCallback(() => {
+    // Force a clean return to the start screen
     setStatus(GameStatus.START);
     setLoading(false);
     setPlayer({
@@ -208,7 +209,7 @@ const App: React.FC = () => {
           <h1 className="text-5xl font-black text-green-500 mb-2 italic">DEX WARS</h1>
           <p className="text-slate-500 mb-8 text-xs font-bold uppercase tracking-[0.3em]">Trench Simulator</p>
           <div className="space-y-4">
-            <button onClick={() => startGame(30)} className="w-full bg-green-600 hover:bg-green-500 text-white font-black py-4 rounded-lg border-b-4 border-green-800 transition-all transform active:scale-95">30 DAY SPRINT</button>
+            <button onClick={() => startGame(30)} className="w-full bg-green-600 hover:bg-green-500 text-white font-black py-4 rounded-lg border-b-4 border-green-800 transition-all transform active:scale-95 shadow-lg shadow-green-500/20">30 DAY SPRINT</button>
             <button onClick={() => startGame(60)} className="w-full border-2 border-slate-700 hover:border-slate-500 text-slate-300 font-black py-4 rounded-lg transition-all transform active:scale-95">60 DAY MARATHON</button>
           </div>
         </div>
@@ -227,8 +228,8 @@ const App: React.FC = () => {
             <p className="text-4xl font-black text-green-500">${netWorth.toLocaleString()}</p>
           </div>
           <div className="space-y-3">
-            <button onClick={shareToX} className="w-full bg-[#1DA1F2] hover:bg-[#1a91da] text-white font-black py-4 rounded-lg">POST TO X</button>
-            <button onClick={handleReset} className="w-full bg-slate-200 hover:bg-white text-black font-black py-4 rounded-lg">NEW RUN</button>
+            <button onClick={shareToX} className="w-full bg-[#1DA1F2] hover:bg-[#1a91da] text-white font-black py-4 rounded-lg transition-transform active:scale-95">POST TO X</button>
+            <button onClick={handleReset} className="w-full bg-slate-200 hover:bg-white text-black font-black py-4 rounded-lg transition-transform active:scale-95">NEW RUN</button>
           </div>
         </div>
       </div>
@@ -253,7 +254,7 @@ const App: React.FC = () => {
           <div className="bg-slate-950 border-2 border-slate-800 rounded-2xl p-5 shadow-2xl">
             <div className="flex justify-between items-start mb-4">
               <h2 className="text-xs font-black text-slate-500 uppercase tracking-widest">DEX: {currentDex?.name}</h2>
-              <span className="text-[18px]">{currentDex?.icon}</span>
+              <span className="text-[24px] filter drop-shadow-[0_0_8px_rgba(255,255,255,0.3)]">{currentDex?.icon}</span>
             </div>
             <p className="text-[9px] text-slate-400 mb-6 border-b border-slate-800 pb-2 italic">
               {currentDex?.specialty}
@@ -265,7 +266,7 @@ const App: React.FC = () => {
                 const change = getPriceChange(coin.id);
                 
                 return (
-                  <div key={coin.id} className="flex items-center justify-between p-2 hover:bg-slate-900/50 rounded-lg group transition-colors">
+                  <div key={coin.id} className="flex items-center justify-between p-2 hover:bg-slate-900/50 rounded-lg group transition-colors border border-transparent hover:border-slate-800/50">
                     <div className="flex-1">
                       <p className="font-bold text-sm text-white group-hover:text-green-400 transition-colors">{coin.name}</p>
                       <div className="flex items-center gap-2">
@@ -317,17 +318,17 @@ const App: React.FC = () => {
         </div>
 
         <div className="lg:col-span-8 flex flex-col gap-8">
-          <div className="bg-black border-2 border-slate-800 rounded-2xl p-6 font-mono text-xs shadow-2xl relative overflow-hidden">
+          <div className="bg-black border-2 border-slate-800 rounded-2xl p-6 font-mono text-xs shadow-2xl relative overflow-hidden min-h-[160px]">
             <div className="absolute top-0 left-0 w-full h-1 bg-green-500 opacity-20 animate-pulse"></div>
             <h3 className="text-slate-600 mb-4 uppercase font-black tracking-widest flex items-center gap-2">
               <span className="w-2 h-2 rounded-full bg-green-500 animate-ping"></span>
               Intel Terminal
             </h3>
-            {loading ? <p className="animate-pulse text-green-500 font-bold">SYNCING BLOCKS & REBALANCING LIQUIDITY...</p> : 
-              <div className="space-y-2 text-slate-300">
+            {loading ? <p className="animate-pulse text-green-500 font-bold uppercase tracking-tighter">Syncing Blocks & Rebalancing Liquidity...</p> : 
+              <div className="space-y-2 text-slate-300 leading-relaxed">
                 {market.news.split('\n').map((line, i) => (
                   <p key={i}>
-                    <span className="text-green-500">&gt;&gt;</span> {line.replace(/^- /, '')}
+                    <span className="text-green-500 mr-2 font-black">&gt;&gt;</span> {line.replace(/^- /, '')}
                   </p>
                 ))}
               </div>
@@ -343,21 +344,24 @@ const App: React.FC = () => {
                     key={dex.id} 
                     disabled={player.currentDexId === dex.id || loading} 
                     onClick={() => travel(dex.id)} 
-                    style={{ borderColor: player.currentDexId === dex.id ? dex.color : '#1e293b' }}
-                    className={`w-full text-left p-3 rounded-xl border-2 flex justify-between items-center transition-all group ${player.currentDexId === dex.id ? 'bg-slate-900 shadow-[0_0_15px_-5px_currentColor]' : 'hover:border-slate-600 bg-slate-900/40 hover:bg-slate-900'}`}
+                    style={{ 
+                      borderColor: player.currentDexId === dex.id ? dex.color : '#1e293b',
+                      backgroundColor: player.currentDexId === dex.id ? `${dex.color}15` : 'transparent'
+                    }}
+                    className={`w-full text-left p-3 rounded-xl border-2 flex justify-between items-center transition-all group active:scale-95 ${player.currentDexId === dex.id ? 'shadow-[0_0_15px_-5px_currentColor]' : 'hover:border-slate-600 bg-slate-900/40 hover:bg-slate-900'}`}
                   >
-                    <div className="flex items-center gap-3">
-                      <span className="text-2xl opacity-80 group-hover:opacity-100 transition-opacity">{dex.icon}</span>
+                    <div className="flex items-center gap-4">
+                      <span className="text-2xl opacity-70 group-hover:opacity-100 transition-opacity drop-shadow-sm">{dex.icon}</span>
                       <div className="flex flex-col">
                         <span className="text-xs font-black" style={{ color: player.currentDexId === dex.id ? dex.color : 'white' }}>{dex.name}</span>
                         <span className="text-[7px] text-slate-500 uppercase tracking-tighter">{dex.network}</span>
                       </div>
                     </div>
                     {player.currentDexId === dex.id ? (
-                      <span className="text-[8px] bg-white text-black px-1.5 py-0.5 rounded font-black">STATIONED</span>
+                      <span className="text-[8px] bg-white text-black px-2 py-1 rounded font-black tracking-tighter">CONNECTED</span>
                     ) : (
                       <div className="text-right">
-                        <span className="text-[8px] font-bold uppercase truncate max-w-[80px]" style={{ color: dex.color }}>{dex.specialty.split(':')[0]}</span>
+                        <span className="text-[8px] font-bold uppercase truncate max-w-[90px] group-hover:opacity-100 opacity-60 transition-opacity" style={{ color: dex.color }}>{dex.specialty.split(':')[0]}</span>
                       </div>
                     )}
                   </button>
@@ -384,10 +388,11 @@ const App: React.FC = () => {
         </div>
       </div>
 
+      {/* Robust Reset Button */}
       <button 
         id="reset-game-btn"
         onClick={() => {
-          if (window.confirm("ABORT MISSION? You will lose all your progress and return to the start menu.")) {
+          if (window.confirm("ABORT MISSION? You will lose all your progress and return to the main menu.")) {
             handleReset();
           }
         }}

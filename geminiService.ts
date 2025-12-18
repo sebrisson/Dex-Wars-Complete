@@ -1,12 +1,11 @@
 
 import { GoogleGenAI } from "@google/genai";
-import { COINS, DEXES } from "../constants";
+import { COINS, DEXES } from "./constants";
 
 const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
 
 export async function generateMarketNews(day: number, currentDex: string) {
   const coinNames = COINS.map(c => c.name).join(", ");
-  const dexNames = DEXES.map(d => d.name).join(", ");
   
   const prompt = `
     You are a crypto-market news bot for a game called DEX Wars. 
