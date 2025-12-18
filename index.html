@@ -9,12 +9,12 @@
     <!-- X / Twitter Meta Tags -->
     <meta name="twitter:card" content="summary_large_image">
     <meta name="twitter:title" content="DEX Wars: Crypto Mogul">
-    <meta name="twitter:description" content="Travel between DEXs, dodge rug pulls, and outrun the Whale debt. Can you become a crypto billionaire?">
-    <meta name="twitter:image" content="https://images.unsplash.com/photo-1621761191319-c6fb62004040?q=80&w=1000&auto=format&fit=crop">
+    <meta name="twitter:description" content="Travel between DEXs, dodge rug pulls, and outrun the Whale debt. Become a billionaire in the trenches.">
+    <meta name="twitter:image" content="https://images.unsplash.com/photo-1639762681485-074b7f938ba0?q=80&w=1000&auto=format&fit=crop">
     
     <!-- Open Graph -->
     <meta property="og:title" content="DEX Wars: Crypto Mogul">
-    <meta property="og:description" content="The ultimate crypto-trading simulator inspired by the classic Drug Wars.">
+    <meta property="og:description" content="The ultimate crypto-trading simulator. PulseChain, Hex, and the Trench.">
     <meta property="og:type" content="website">
 
     <script src="https://cdn.tailwindcss.com"></script>
@@ -30,32 +30,62 @@
             background-size: 20px 20px;
             background-image: radial-gradient(circle, #1e293b 1px, transparent 1px);
         }
-        /* Custom scrollbar for that terminal feel */
-        ::-webkit-scrollbar {
-          width: 4px;
+        /* CRT Scanline Overlay */
+        .crt::before {
+            content: " ";
+            display: block;
+            position: fixed;
+            top: 0;
+            left: 0;
+            bottom: 0;
+            right: 0;
+            background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.25) 50%), linear-gradient(90deg, rgba(255, 0, 0, 0.06), rgba(0, 255, 0, 0.02), rgba(0, 0, 255, 0.06));
+            z-index: 100;
+            background-size: 100% 2px, 3px 100%;
+            pointer-events: none;
         }
-        ::-webkit-scrollbar-track {
-          background: #020617;
+        .crt::after {
+            content: " ";
+            display: block;
+            position: fixed;
+            top: 0;
+            left: 0;
+            bottom: 0;
+            right: 0;
+            background: rgba(18, 16, 16, 0.1);
+            opacity: 0;
+            z-index: 100;
+            pointer-events: none;
+            animation: flicker 0.15s infinite;
         }
-        ::-webkit-scrollbar-thumb {
-          background: #1e293b;
-          border-radius: 10px;
+        @keyframes flicker {
+            0% { opacity: 0.27861; }
+            5% { opacity: 0.34769; }
+            10% { opacity: 0.23604; }
+            15% { opacity: 0.90626; }
+            20% { opacity: 0.18128; }
+            100% { opacity: 0.2; }
         }
+        ::-webkit-scrollbar { width: 4px; }
+        ::-webkit-scrollbar-track { background: #020617; }
+        ::-webkit-scrollbar-thumb { background: #1e293b; border-radius: 10px; }
     </style>
 <script type="importmap">
 {
   "imports": {
+    "vite": "https://esm.sh/vite@^7.3.0",
     "react/": "https://esm.sh/react@^19.2.3/",
     "react": "https://esm.sh/react@^19.2.3",
     "@google/genai": "https://esm.sh/@google/genai@^1.34.0",
-    "react-dom/": "https://esm.sh/react-dom@^19.2.3/"
+    "react-dom/": "https://esm.sh/react-dom@^19.2.3/",
+    "@vitejs/plugin-react": "https://esm.sh/@vitejs/plugin-react@^5.1.2"
   }
 }
 </script>
-<link rel="stylesheet" href="/index.css">
 </head>
-<body class="crypto-grid">
+<body class="crypto-grid crt">
     <div id="root"></div>
-<script type="module" src="/index.tsx"></script>
+    <!-- Vite entry point -->
+    <script type="module" src="/index.tsx"></script>
 </body>
 </html>

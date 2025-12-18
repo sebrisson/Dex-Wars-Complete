@@ -102,7 +102,6 @@ const App: React.FC = () => {
   const buyCoin = (coinId: string) => {
     const price = market.prices[coinId];
     if (!price) return;
-    // Explicitly cast Object.values to number[] to ensure the reduce accumulator and values are numbers
     const currentInventoryCount = (Object.values(player.inventory) as number[]).reduce((a, b) => a + b, 0);
     const spaceLeft = player.walletCapacity - currentInventoryCount;
     const amount = Math.min(Math.floor(player.cash / price), spaceLeft);
@@ -146,7 +145,6 @@ const App: React.FC = () => {
     }));
   };
 
-  // Explicitly cast Object.entries to [string, number][] to ensure qty is treated as a number during calculation
   const totalAssetsValue = player.cash + (Object.entries(player.inventory) as [string, number][]).reduce((acc, [id, qty]) => acc + (qty * (market.prices[id] || 0)), 0);
 
   const shareToX = () => {
@@ -190,7 +188,6 @@ const App: React.FC = () => {
   }
 
   const currentDex = DEXES.find(d => d.id === player.currentDexId);
-  // Explicitly cast Object.values to number[] to ensure the reduce calculation works without 'unknown' errors
   const walletUsed = (Object.values(player.inventory) as number[]).reduce((a, b) => a + b, 0);
 
   return (
@@ -231,7 +228,6 @@ const App: React.FC = () => {
                   <div key={id} className="flex justify-between items-center bg-slate-900/30 p-2 rounded-lg border border-slate-800/50">
                     <p className="text-xs font-bold text-white">{COINS.find(c => c.id === id)?.name}</p>
                     <div className="flex items-center gap-3">
-                      {/* Explicitly using qty from the casted Object.entries to ensure arithmetic operation is valid */}
                       <p className="text-[10px] text-green-400 font-mono">${(qty * (market.prices[id] || 0)).toLocaleString()}</p>
                       <button onClick={() => sellCoin(id)} className="bg-red-500/10 hover:bg-red-500 text-red-500 hover:text-white px-2 py-1 text-[10px] font-black rounded border border-red-500/40">SELL</button>
                     </div>
@@ -247,7 +243,11 @@ const App: React.FC = () => {
             <h3 className="text-slate-600 mb-4 uppercase font-black tracking-widest">Intel Terminal</h3>
             {loading ? <p className="animate-pulse text-green-500">Syncing blocks...</p> : 
               <div className="space-y-2 text-slate-300">
-                {market.news.split('\n').map((line, i) => <p key={i}><span className="text-green-500">>></span> {line.replace(/^- /, '')}</p>)}
+                {market.news.split('\n').map((line, i) => (
+                  <p key={i}>
+                    <span className="text-green-500">&gt;&gt;</span> {line.replace(/^- /, '')}
+                  </p>
+                ))}
               </div>
             }
           </div>
