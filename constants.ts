@@ -14,14 +14,13 @@ export const COINS: Coin[] = [
 ];
 
 export const DEXES: Dex[] = [
-  { id: 'uniswap', name: 'Uniswap', network: 'Ethereum', specialty: 'Blue chips' },
-  { id: 'pulsex', name: 'PulseX', network: 'PulseChain', specialty: 'Pulse Ecosystem' },
-  { id: 'pancakeswap', name: 'PancakeSwap', network: 'BSC', specialty: 'Low fees' },
-  { id: 'raydium', name: 'Raydium', network: 'Solana', specialty: 'Memecoins' },
-  { id: 'traderjoe', name: 'Trader Joe', network: 'Avalanche', specialty: 'DeFi 2.0' },
+  { id: 'uniswap', name: 'Uniswap', network: 'Ethereum', specialty: 'Liquidity Provider: 5% bonus on all sales', color: '#ff007a', icon: '🦄' },
+  { id: 'pulsex', name: 'PulseX', network: 'PulseChain', specialty: 'Safe Haven: Immune to Rug Pulls', color: '#00f5ff', icon: '⚡' },
+  { id: 'libertyswap', name: 'Liberty Swap', network: 'PulseChain', specialty: 'Low Slippage: 5% discount on all buys', color: '#ff4500', icon: '🗽' },
+  { id: 'piteas', name: 'Piteas', network: 'PulseChain', specialty: 'Degens Only: Meme volatility is boosted 1.5x', color: '#ffa500', icon: '🦜' },
+  { id: 'internetmoney', name: 'Internet Money Wallet', network: 'PulseChain', specialty: 'Auto-Staking: 2% cash interest on bridge', color: '#ffd700', icon: '💰' },
 ];
 
 export const INITIAL_CASH = 5000;
 export const INITIAL_DEBT = 5000;
-export const DEBT_INTEREST = 1.15; // 15% per day
-export const INITIAL_CAPACITY = 100; // Units of coins
+export const DEBT_INTEREST = 1.05; // 5% per day
