@@ -245,7 +245,7 @@ const App: React.FC = () => {
               <div className="space-y-2 text-slate-300">
                 {market.news.split('\n').map((line, i) => (
                   <p key={i}>
-                    <span className="text-green-500">&gt;&gt;</span> {line.replace(/^- /, '')}
+                    <span className="text-green-500"></span> {line.replace(/^- /, '')}
                   </p>
                 ))}
               </div>
