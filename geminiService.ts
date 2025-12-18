@@ -1,6 +1,6 @@
 
 import { GoogleGenAI } from "@google/genai";
-import { COINS, DEXES } from "./constants";
+import { COINS, DEXES } from "./constants.ts";
 
 const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
 

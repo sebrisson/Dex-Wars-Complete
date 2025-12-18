@@ -8,12 +8,12 @@ import {
   DEBT_INTEREST
 } from './constants';
 import { PlayerState, MarketState, GameStatus } from './types';
-// Fixed the import path to point to the root file
-import { generateMarketNews } from './geminiService';
+// Using the explicit extension to satisfy the tsconfig and vite resolution
+import { generateMarketNews } from './geminiService.ts';
 
 const StatCard = ({ label, value, color }: { label: string; value: string | number; color?: string }) => (
-  <div className="bg-slate-900/80 border border-slate-800 p-3 rounded-lg flex flex-col items-center justify-center shadow-lg shadow-black/50 hover:border-slate-700 transition-colors">
-    <span className="text-[10px] text-slate-500 uppercase tracking-widest font-bold">{label}</span>
+  <div className="bg-slate-900/80 border border-slate-800 p-3 rounded-lg flex flex-col items-center justify-center shadow-lg shadow-black/50 hover:border-slate-700 transition-colors group">
+    <span className="text-[10px] text-slate-500 uppercase tracking-widest font-bold group-hover:text-slate-400 transition-colors">{label}</span>
     <span className={`text-lg font-bold ${color || 'text-white'}`}>{value}</span>
   </div>
 );
@@ -205,10 +205,11 @@ const App: React.FC = () => {
   if (status === GameStatus.START) {
     return (
       <div className="min-h-screen flex items-center justify-center p-4">
-        <div className="max-w-md w-full bg-slate-950 border-2 border-green-500/50 p-10 rounded-2xl shadow-2xl text-center">
-          <h1 className="text-5xl font-black text-green-500 mb-2 italic">DEX WARS</h1>
-          <p className="text-slate-500 mb-8 text-xs font-bold uppercase tracking-[0.3em]">Trench Simulator</p>
-          <div className="space-y-4">
+        <div className="max-w-md w-full bg-slate-950 border-2 border-green-500/50 p-10 rounded-2xl shadow-2xl text-center relative overflow-hidden">
+          <div className="absolute top-0 left-0 w-full h-full bg-green-500/5 pointer-events-none animate-pulse"></div>
+          <h1 className="text-5xl font-black text-green-500 mb-2 italic drop-shadow-[0_0_15px_rgba(34,197,94,0.3)]">DEX WARS</h1>
+          <p className="text-slate-500 mb-8 text-xs font-bold uppercase tracking-[0.3em]">The Trench Simulator</p>
+          <div className="space-y-4 relative z-10">
             <button onClick={() => startGame(30)} className="w-full bg-green-600 hover:bg-green-500 text-white font-black py-4 rounded-lg border-b-4 border-green-800 transition-all transform active:scale-95 shadow-lg shadow-green-500/20">30 DAY SPRINT</button>
             <button onClick={() => startGame(60)} className="w-full border-2 border-slate-700 hover:border-slate-500 text-slate-300 font-black py-4 rounded-lg transition-all transform active:scale-95">60 DAY MARATHON</button>
           </div>
@@ -229,7 +230,7 @@ const App: React.FC = () => {
           </div>
           <div className="space-y-3">
             <button onClick={shareToX} className="w-full bg-[#1DA1F2] hover:bg-[#1a91da] text-white font-black py-4 rounded-lg transition-transform active:scale-95">POST TO X</button>
-            <button onClick={handleReset} className="w-full bg-slate-200 hover:bg-white text-black font-black py-4 rounded-lg transition-transform active:scale-95">NEW RUN</button>
+            <button onClick={handleReset} className="w-full bg-slate-200 hover:bg-white text-black font-black py-4 rounded-lg transition-transform active:scale-95">BACK TO START</button>
           </div>
         </div>
       </div>
@@ -251,27 +252,27 @@ const App: React.FC = () => {
 
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 flex-grow">
         <div className="lg:col-span-4 space-y-6">
-          <div className="bg-slate-950 border-2 border-slate-800 rounded-2xl p-5 shadow-2xl">
+          <div className="bg-slate-950 border-2 border-slate-800 rounded-2xl p-5 shadow-2xl relative">
             <div className="flex justify-between items-start mb-4">
               <h2 className="text-xs font-black text-slate-500 uppercase tracking-widest">DEX: {currentDex?.name}</h2>
-              <span className="text-[24px] filter drop-shadow-[0_0_8px_rgba(255,255,255,0.3)]">{currentDex?.icon}</span>
+              <span className="text-[28px] drop-shadow-[0_0_10px_rgba(255,255,255,0.2)]">{currentDex?.icon}</span>
             </div>
-            <p className="text-[9px] text-slate-400 mb-6 border-b border-slate-800 pb-2 italic">
+            <p className="text-[10px] text-slate-400 mb-6 border-b border-slate-800 pb-3 italic leading-relaxed">
               {currentDex?.specialty}
             </p>
-            <div className="space-y-4 max-h-[400px] overflow-y-auto pr-2 custom-scrollbar">
+            <div className="space-y-4 max-h-[420px] overflow-y-auto pr-2 custom-scrollbar">
               {COINS.map(coin => {
                 let price = market.prices[coin.id] || 0;
                 if (player.currentDexId === 'libertyswap') price *= 0.95;
                 const change = getPriceChange(coin.id);
                 
                 return (
-                  <div key={coin.id} className="flex items-center justify-between p-2 hover:bg-slate-900/50 rounded-lg group transition-colors border border-transparent hover:border-slate-800/50">
+                  <div key={coin.id} className="flex items-center justify-between p-2 hover:bg-slate-900/50 rounded-lg group transition-all border border-transparent hover:border-slate-800/50">
                     <div className="flex-1">
                       <p className="font-bold text-sm text-white group-hover:text-green-400 transition-colors">{coin.name}</p>
                       <div className="flex items-center gap-2">
-                        <p className="text-[10px] font-mono text-slate-500">
-                          ${price > 1 ? price.toLocaleString() : price.toFixed(6)}
+                        <p className="text-[11px] font-mono text-slate-500">
+                          ${price > 1 ? price.toLocaleString(undefined, { maximumFractionDigits: 2 }) : price.toFixed(6)}
                           {player.currentDexId === 'libertyswap' && <span className="text-green-500 ml-1 text-[8px] font-bold">-5%</span>}
                         </p>
                         {change !== null && (
@@ -289,22 +290,22 @@ const App: React.FC = () => {
           </div>
 
           <div className="bg-slate-950 border-2 border-slate-800 rounded-2xl p-5 shadow-2xl">
-            <h2 className="text-xs font-black text-slate-500 uppercase mb-6 tracking-widest">Storage</h2>
+            <h2 className="text-xs font-black text-slate-500 uppercase mb-6 tracking-widest">Hot Wallet</h2>
             <div className="space-y-3">
-              {Object.entries(player.inventory).length === 0 ? <p className="text-[10px] text-slate-600 italic">Empty wallet.</p> :
+              {Object.entries(player.inventory).length === 0 ? <p className="text-[10px] text-slate-600 italic font-medium">No assets bridged.</p> :
                 (Object.entries(player.inventory) as [string, number][]).map(([id, qty]) => {
                   let price = market.prices[id] || 0;
                   if (player.currentDexId === 'uniswap') price *= 1.05;
                   
                   return (
-                    <div key={id} className="flex justify-between items-center bg-slate-900/30 p-2 rounded-lg border border-slate-800/50">
+                    <div key={id} className="flex justify-between items-center bg-slate-900/30 p-2 rounded-lg border border-slate-800/50 hover:border-slate-700 transition-colors">
                       <div>
                         <p className="text-xs font-bold text-white">{COINS.find(c => c.id === id)?.name}</p>
-                        <p className="text-[8px] text-slate-500 font-mono">{qty.toLocaleString()} units</p>
+                        <p className="text-[8px] text-slate-500 font-mono tracking-wider">{qty.toLocaleString()} units</p>
                       </div>
                       <div className="flex items-center gap-3">
                         <div className="text-right">
-                          <p className="text-[10px] text-green-400 font-mono">${(qty * price).toLocaleString()}</p>
+                          <p className="text-[10px] text-green-400 font-mono font-bold">${(qty * price).toLocaleString()}</p>
                           {player.currentDexId === 'uniswap' && <p className="text-green-500 text-[8px] font-black tracking-tighter uppercase">+5% LP BONUS</p>}
                         </div>
                         <button onClick={() => sellCoin(id)} className="bg-red-500/10 hover:bg-red-500 text-red-500 hover:text-white px-2 py-1 text-[10px] font-black rounded border border-red-500/40 transition-colors">SELL</button>
@@ -322,13 +323,13 @@ const App: React.FC = () => {
             <div className="absolute top-0 left-0 w-full h-1 bg-green-500 opacity-20 animate-pulse"></div>
             <h3 className="text-slate-600 mb-4 uppercase font-black tracking-widest flex items-center gap-2">
               <span className="w-2 h-2 rounded-full bg-green-500 animate-ping"></span>
-              Intel Terminal
+              Pulse Terminal <span className="text-[8px] font-normal opacity-50 ml-auto">v2.5.0-STABLE</span>
             </h3>
-            {loading ? <p className="animate-pulse text-green-500 font-bold uppercase tracking-tighter">Syncing Blocks & Rebalancing Liquidity...</p> : 
-              <div className="space-y-2 text-slate-300 leading-relaxed">
+            {loading ? <p className="animate-pulse text-green-500 font-bold uppercase tracking-tighter">Syncing Blocks & Verifying Proof-of-Stake...</p> : 
+              <div className="space-y-2 text-slate-300 leading-relaxed max-h-[120px] overflow-y-auto custom-scrollbar pr-4">
                 {market.news.split('\n').map((line, i) => (
-                  <p key={i}>
-                    <span className="text-green-500 mr-2 font-black">&gt;&gt;</span> {line.replace(/^- /, '')}
+                  <p key={i} className="animate-in fade-in slide-in-from-left-2 duration-300">
+                    <span className="text-green-500 mr-2 font-black select-none">&gt;&gt;</span> {line.replace(/^- /, '')}
                   </p>
                 ))}
               </div>
@@ -337,7 +338,7 @@ const App: React.FC = () => {
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
             <div className="bg-slate-950 border-2 border-slate-800 rounded-2xl p-6 shadow-2xl">
-              <h2 className="text-xs font-black text-slate-500 uppercase mb-6 tracking-widest">Bridge To</h2>
+              <h2 className="text-xs font-black text-slate-500 uppercase mb-6 tracking-widest">Bridge Operations</h2>
               <div className="space-y-3">
                 {DEXES.map(dex => (
                   <button 
@@ -348,20 +349,20 @@ const App: React.FC = () => {
                       borderColor: player.currentDexId === dex.id ? dex.color : '#1e293b',
                       backgroundColor: player.currentDexId === dex.id ? `${dex.color}15` : 'transparent'
                     }}
-                    className={`w-full text-left p-3 rounded-xl border-2 flex justify-between items-center transition-all group active:scale-95 ${player.currentDexId === dex.id ? 'shadow-[0_0_15px_-5px_currentColor]' : 'hover:border-slate-600 bg-slate-900/40 hover:bg-slate-900'}`}
+                    className={`w-full text-left p-3 rounded-xl border-2 flex justify-between items-center transition-all group active:scale-[0.98] ${player.currentDexId === dex.id ? 'shadow-[0_0_20px_-5px_currentColor]' : 'hover:border-slate-600 bg-slate-900/40 hover:bg-slate-900'}`}
                   >
                     <div className="flex items-center gap-4">
-                      <span className="text-2xl opacity-70 group-hover:opacity-100 transition-opacity drop-shadow-sm">{dex.icon}</span>
+                      <span className="text-2xl opacity-70 group-hover:opacity-100 transition-opacity drop-shadow-md">{dex.icon}</span>
                       <div className="flex flex-col">
                         <span className="text-xs font-black" style={{ color: player.currentDexId === dex.id ? dex.color : 'white' }}>{dex.name}</span>
                         <span className="text-[7px] text-slate-500 uppercase tracking-tighter">{dex.network}</span>
                       </div>
                     </div>
                     {player.currentDexId === dex.id ? (
-                      <span className="text-[8px] bg-white text-black px-2 py-1 rounded font-black tracking-tighter">CONNECTED</span>
+                      <span className="text-[8px] bg-white text-black px-2 py-1 rounded font-black tracking-tighter border border-white shadow-[0_0_10px_white]">CONNECTED</span>
                     ) : (
                       <div className="text-right">
-                        <span className="text-[8px] font-bold uppercase truncate max-w-[90px] group-hover:opacity-100 opacity-60 transition-opacity" style={{ color: dex.color }}>{dex.specialty.split(':')[0]}</span>
+                        <span className="text-[8px] font-bold uppercase truncate max-w-[100px] group-hover:opacity-100 opacity-60 transition-opacity" style={{ color: dex.color }}>{dex.specialty.split(':')[0]}</span>
                       </div>
                     )}
                   </button>
@@ -369,18 +370,26 @@ const App: React.FC = () => {
               </div>
             </div>
 
-            <div className="bg-slate-950 border-2 border-slate-800 rounded-2xl p-6 shadow-2xl">
-              <h2 className="text-xs font-black text-slate-500 uppercase mb-6 tracking-widest">Actions</h2>
-              <button onClick={payWhale} disabled={player.debt <= 0 || player.cash <= 0} className="w-full bg-red-600 hover:bg-red-500 text-white font-black py-4 rounded-xl border-b-4 border-red-800 disabled:opacity-20 transition-all active:translate-y-1 active:border-b-0 mb-6">PAY THE WHALE</button>
+            <div className="bg-slate-950 border-2 border-slate-800 rounded-2xl p-6 shadow-2xl flex flex-col">
+              <h2 className="text-xs font-black text-slate-500 uppercase mb-6 tracking-widest">Financial Actions</h2>
+              <button 
+                onClick={payWhale} 
+                disabled={player.debt <= 0 || player.cash <= 0} 
+                className="w-full bg-red-600 hover:bg-red-500 text-white font-black py-4 rounded-xl border-b-4 border-red-800 disabled:opacity-20 transition-all active:translate-y-1 active:border-b-0 mb-6 flex items-center justify-center gap-2"
+              >
+                PAY THE WHALE 🐋
+              </button>
               
-              <div className="bg-slate-900/50 p-4 rounded-xl border border-slate-800/50">
-                <p className="text-[8px] text-slate-600 uppercase mb-3 font-black tracking-widest">Transaction Log</p>
-                <div className="space-y-2 h-[80px] overflow-y-auto custom-scrollbar">
-                  {player.history.map((h, i) => (
-                    <p key={i} className={`text-[10px] border-l-2 pl-2 mb-1 ${h.includes('[PERK]') ? 'text-green-400 border-green-500' : 'text-slate-500 border-slate-800'}`}>
-                      {h}
-                    </p>
-                  ))}
+              <div className="bg-slate-900/50 p-4 rounded-xl border border-slate-800/50 flex-grow">
+                <p className="text-[8px] text-slate-600 uppercase mb-3 font-black tracking-widest">Chain Event Log</p>
+                <div className="space-y-2 h-[100px] overflow-y-auto custom-scrollbar">
+                  {player.history.length === 0 ? <p className="text-[10px] text-slate-700 italic">No events logged.</p> :
+                    player.history.map((h, i) => (
+                      <p key={i} className={`text-[10px] border-l-2 pl-2 mb-1 py-1 leading-snug animate-in fade-in duration-500 ${h.includes('[PERK]') ? 'text-green-400 border-green-500' : 'text-slate-500 border-slate-800'}`}>
+                        {h}
+                      </p>
+                    ))
+                  }
                 </div>
               </div>
             </div>
@@ -391,13 +400,13 @@ const App: React.FC = () => {
       <button 
         id="reset-game-btn"
         onClick={() => {
-          if (window.confirm("ABORT MISSION? You will lose all your progress and return to the main menu.")) {
+          if (window.confirm("TERMINATE SESSION? You will lose all progress and return to the main dashboard.")) {
             handleReset();
           }
         }}
-        className="fixed bottom-6 right-6 z-[100] bg-slate-950/90 hover:bg-red-950/90 text-slate-600 hover:text-red-500 border border-slate-800 hover:border-red-900/50 px-5 py-2.5 text-[10px] font-black rounded-xl shadow-2xl transition-all uppercase tracking-[0.2em] backdrop-blur-md active:scale-95 border-2 shadow-red-500/5"
+        className="fixed bottom-6 right-6 z-[100] bg-slate-950/90 hover:bg-red-950/90 text-slate-600 hover:text-red-500 border-2 border-slate-800 hover:border-red-900/50 px-6 py-3 text-[10px] font-black rounded-xl shadow-2xl transition-all uppercase tracking-[0.2em] backdrop-blur-md active:scale-95 shadow-red-500/10 hover:shadow-red-500/20"
       >
-        Reset Game
+        Reset Terminal
       </button>
     </div>
   );
