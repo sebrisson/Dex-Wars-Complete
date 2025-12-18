@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useCallback } from 'react';
 import { 
   COINS, 
   DEXES, 
@@ -8,13 +8,12 @@ import {
   DEBT_INTEREST, 
   INITIAL_CAPACITY 
 } from './constants';
-import { PlayerState, MarketState, GameStatus, Coin } from './types';
+import { PlayerState, MarketState, GameStatus } from './types';
 import { generateMarketNews } from './services/geminiService';
 
-// Components
 const StatCard = ({ label, value, color }: { label: string; value: string | number; color?: string }) => (
-  <div className="bg-slate-900/80 border border-slate-800 p-3 rounded-lg flex flex-col items-center justify-center">
-    <span className="text-[10px] text-slate-400 uppercase tracking-widest">{label}</span>
+  <div className="bg-slate-900/80 border border-slate-800 p-3 rounded-lg flex flex-col items-center justify-center shadow-lg shadow-black/50">
+    <span className="text-[10px] text-slate-500 uppercase tracking-widest font-bold">{label}</span>
     <span className={`text-lg font-bold ${color || 'text-white'}`}>{value}</span>
   </div>
 );
@@ -31,21 +30,20 @@ const App: React.FC = () => {
     day: 1,
     maxDays: 30,
     health: 100,
-    history: ["Game started. Welcome to the trenches."]
+    history: ["Terminal initialized..."]
   });
 
   const [market, setMarket] = useState<MarketState>({
     prices: {},
-    news: "Welcome to DEX Wars. Buy low, sell high, and don't get rugged."
+    news: "Welcome to the trenches. Watch your OpSec, pay your debt, and aim for the moon."
   });
 
-  // Calculate market prices based on base price + volatility
   const refreshPrices = useCallback(() => {
     const newPrices: Record<string, number> = {};
     COINS.forEach(coin => {
       const fluctuation = (Math.random() - 0.5) * 2 * coin.volatility;
       const finalPrice = coin.basePrice * (1 + fluctuation);
-      newPrices[coin.id] = Math.max(0.00000001, finalPrice);
+      newPrices[coin.id] = Math.max(0.00000000001, finalPrice);
     });
     return newPrices;
   }, []);
@@ -61,46 +59,34 @@ const App: React.FC = () => {
       day: 1,
       maxDays: days,
       health: 100,
-      history: [`Your ${days}-day journey begins. Pay the Whale his money.`]
+      history: [`Day 1: Connection established at Uniswap.`]
     });
     setMarket({
       prices: initialPrices,
-      news: "The bull run is starting. Get in early!"
+      news: "The markets are open. Volatility is high. Good luck, Mogul."
     });
     setStatus(GameStatus.PLAYING);
   };
 
   const travel = async (dexId: string) => {
-    if (dexId === player.currentDexId) return;
-    
+    if (dexId === player.currentDexId || loading) return;
     setLoading(true);
     const newDay = player.day + 1;
-    
     if (newDay > player.maxDays) {
       setStatus(GameStatus.GAMEOVER);
       setLoading(false);
       return;
     }
-
     const newPrices = refreshPrices();
     const newDebt = Math.round(player.debt * DEBT_INTEREST);
     const dexName = DEXES.find(d => d.id === dexId)?.name || 'Unknown DEX';
-    
-    // Random events
     let healthPenalty = 0;
     let message = `Traveled to ${dexName}.`;
-    const rand = Math.random();
-    if (rand < 0.1) {
-      healthPenalty = 15;
-      message += " You were phished! Lost some OpSec.";
-    } else if (rand < 0.2) {
-      const stolenCash = Math.floor(player.cash * 0.1);
-      setPlayer(p => ({ ...p, cash: p.cash - stolenCash }));
-      message += ` Met a scammer. Lost $${stolenCash.toLocaleString()}.`;
+    if (Math.random() < 0.08) {
+      healthPenalty = 20;
+      message += " RUG PULL! You lost 20% OpSec.";
     }
-
-    const geminiNews = await generateMarketNews(newDay, dexName);
-
+    const news = await generateMarketNews(newDay, dexName);
     setPlayer(prev => ({
       ...prev,
       day: newDay,
@@ -109,26 +95,18 @@ const App: React.FC = () => {
       health: Math.max(0, prev.health - healthPenalty),
       history: [message, ...prev.history].slice(0, 5)
     }));
-
-    setMarket({
-      prices: newPrices,
-      news: geminiNews
-    });
-
+    setMarket({ prices: newPrices, news: news });
     setLoading(false);
   };
 
   const buyCoin = (coinId: string) => {
     const price = market.prices[coinId];
     if (!price) return;
-    
-    const maxAffordable = Math.floor(player.cash / price);
+    // Explicitly cast Object.values to number[] to ensure the reduce accumulator and values are numbers
     const currentInventoryCount = (Object.values(player.inventory) as number[]).reduce((a, b) => a + b, 0);
     const spaceLeft = player.walletCapacity - currentInventoryCount;
-    
-    const amount = Math.min(maxAffordable, spaceLeft);
+    const amount = Math.min(Math.floor(player.cash / price), spaceLeft);
     if (amount <= 0) return;
-
     setPlayer(prev => {
       const newInventory = { ...prev.inventory };
       newInventory[coinId] = (newInventory[coinId] || 0) + amount;
@@ -143,11 +121,8 @@ const App: React.FC = () => {
 
   const sellCoin = (coinId: string) => {
     const amount = player.inventory[coinId] || 0;
-    if (amount <= 0) return;
-
     const price = market.prices[coinId];
-    if (!price) return;
-
+    if (amount <= 0 || !price) return;
     setPlayer(prev => {
       const newInventory = { ...prev.inventory };
       delete newInventory[coinId];
@@ -171,47 +146,24 @@ const App: React.FC = () => {
     }));
   };
 
-  const totalAssetsValue = player.cash + (Object.entries(player.inventory) as [string, number][]).reduce((acc, [id, qty]) => {
-    return acc + (qty * (market.prices[id] || 0));
-  }, 0);
+  // Explicitly cast Object.entries to [string, number][] to ensure qty is treated as a number during calculation
+  const totalAssetsValue = player.cash + (Object.entries(player.inventory) as [string, number][]).reduce((acc, [id, qty]) => acc + (qty * (market.prices[id] || 0)), 0);
 
   const shareToX = () => {
     const netWorth = totalAssetsValue - player.debt;
-    const text = `I just finished a run of DEX Wars: Crypto Mogul! My final net worth was $${netWorth.toLocaleString()}. Can you beat me in the trenches? 🚀📈 #DEXWars #Crypto #PulseChain`;
-    const url = window.location.href;
-    window.open(`https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}&url=${encodeURIComponent(url)}`, '_blank');
+    const text = `I just dominated the trenches in DEX Wars! My net worth: $${netWorth.toLocaleString()}. 🚀📈 #DEXWars #PulseChain`;
+    window.open(`https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}&url=${encodeURIComponent(window.location.href)}`, '_blank');
   };
 
   if (status === GameStatus.START) {
     return (
       <div className="min-h-screen flex items-center justify-center p-4">
-        <div className="max-w-md w-full bg-slate-950 border-2 border-green-500/50 p-8 rounded-2xl shadow-2xl shadow-green-500/20 text-center">
-          <h1 className="text-4xl font-black text-green-500 mb-2 italic">DEX WARS</h1>
-          <p className="text-slate-400 mb-8 text-sm uppercase tracking-widest">The Crypto Mogul Simulator</p>
-          
+        <div className="max-w-md w-full bg-slate-950 border-2 border-green-500/50 p-10 rounded-2xl shadow-2xl text-center">
+          <h1 className="text-5xl font-black text-green-500 mb-2 italic">DEX WARS</h1>
+          <p className="text-slate-500 mb-8 text-xs font-bold uppercase tracking-[0.3em]">Trench Simulator</p>
           <div className="space-y-4">
-            <button 
-              onClick={() => startGame(30)}
-              className="w-full bg-green-600 hover:bg-green-500 text-white font-bold py-4 rounded-lg transition-all transform hover:scale-105"
-            >
-              START 30 DAY RUN
-            </button>
-            <button 
-              onClick={() => startGame(60)}
-              className="w-full border-2 border-slate-700 hover:border-slate-500 text-slate-300 font-bold py-4 rounded-lg transition-all"
-            >
-              START 60 DAY RUN
-            </button>
-          </div>
-
-          <div className="mt-8 text-left space-y-2">
-            <p className="text-xs text-slate-500 uppercase font-bold tracking-widest">Rules of the Trench:</p>
-            <ul className="text-xs text-slate-400 space-y-1 list-disc list-inside">
-              <li>Buy low, sell high across different DEXs.</li>
-              <li>Every travel to a new DEX takes 1 day.</li>
-              <li>The Whale wants his money. Debt grows at 15%/day.</li>
-              <li>Watch out for rug pulls and phishing attacks.</li>
-            </ul>
+            <button onClick={() => startGame(30)} className="w-full bg-green-600 hover:bg-green-500 text-white font-black py-4 rounded-lg border-b-4 border-green-800">30 DAY SPRINT</button>
+            <button onClick={() => startGame(60)} className="w-full border-2 border-slate-700 hover:border-slate-500 text-slate-300 font-black py-4 rounded-lg">60 DAY MARATHON</button>
           </div>
         </div>
       </div>
@@ -222,33 +174,15 @@ const App: React.FC = () => {
     const netWorth = totalAssetsValue - player.debt;
     return (
       <div className="min-h-screen flex items-center justify-center p-4">
-        <div className="max-w-md w-full bg-slate-950 border-2 border-red-500/50 p-8 rounded-2xl shadow-2xl shadow-red-500/20 text-center">
-          <h1 className="text-4xl font-black text-white mb-2 italic">GAME OVER</h1>
-          <p className="text-slate-400 mb-8 uppercase tracking-widest">Run Complete</p>
-          
-          <div className="space-y-4 mb-8">
-            <div className="bg-slate-900 p-4 rounded-lg border border-slate-800">
-              <p className="text-xs text-slate-500 uppercase mb-1">Final Net Worth</p>
-              <p className={`text-3xl font-bold ${netWorth >= 0 ? 'text-green-500' : 'text-red-500'}`}>
-                ${netWorth.toLocaleString()}
-              </p>
-            </div>
+        <div className="max-w-md w-full bg-slate-950 border-2 border-white/20 p-10 rounded-2xl shadow-2xl text-center">
+          <h1 className="text-4xl font-black text-white mb-2 italic">RUN COMPLETE</h1>
+          <div className="bg-slate-900 p-6 rounded-xl border border-slate-800 my-8">
+            <p className="text-[10px] text-slate-500 uppercase font-bold">Final Net Worth</p>
+            <p className="text-4xl font-black text-green-500">${netWorth.toLocaleString()}</p>
           </div>
-
           <div className="space-y-3">
-            <button 
-              onClick={shareToX}
-              className="w-full bg-[#1DA1F2] hover:bg-[#1a91da] text-white font-bold py-4 rounded-lg transition-all flex items-center justify-center gap-2"
-            >
-              <svg className="w-5 h-5 fill-current" viewBox="0 0 24 24"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"></path></svg>
-              SHARE SCORE TO X
-            </button>
-            <button 
-              onClick={() => setStatus(GameStatus.START)}
-              className="w-full bg-slate-200 hover:bg-white text-black font-bold py-4 rounded-lg transition-all"
-            >
-              PLAY AGAIN
-            </button>
+            <button onClick={shareToX} className="w-full bg-[#1DA1F2] hover:bg-[#1a91da] text-white font-black py-4 rounded-lg">POST TO X</button>
+            <button onClick={() => setStatus(GameStatus.START)} className="w-full bg-slate-200 hover:bg-white text-black font-black py-4 rounded-lg">NEW RUN</button>
           </div>
         </div>
       </div>
@@ -256,111 +190,94 @@ const App: React.FC = () => {
   }
 
   const currentDex = DEXES.find(d => d.id === player.currentDexId);
+  // Explicitly cast Object.values to number[] to ensure the reduce calculation works without 'unknown' errors
   const walletUsed = (Object.values(player.inventory) as number[]).reduce((a, b) => a + b, 0);
 
   return (
-    <div className="min-h-screen flex flex-col max-w-5xl mx-auto p-4 md:p-6 gap-6">
-      {/* Header Stats */}
-      <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
-        <StatCard label="Day" value={`${player.day} / ${player.maxDays}`} color="text-yellow-400" />
+    <div className="min-h-screen flex flex-col max-w-6xl mx-auto p-4 md:p-8 gap-6 relative z-10">
+      <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
+        <StatCard label="Day" value={`${player.day}/${player.maxDays}`} color="text-yellow-400" />
         <StatCard label="Cash" value={`$${player.cash.toLocaleString()}`} color="text-green-400" />
-        <StatCard label="Debt" value={`$${player.debt.toLocaleString()}`} color="text-red-400" />
-        <StatCard label="Wallet" value={`${walletUsed} / ${player.walletCapacity}`} color="text-blue-400" />
-        <StatCard label="OpSec" value={`${player.health}%`} color={player.health > 50 ? 'text-green-400' : 'text-red-400'} />
+        <StatCard label="Debt" value={`$${player.debt.toLocaleString()}`} color="text-red-500" />
+        <StatCard label="Wallet" value={`${walletUsed}/${player.walletCapacity}`} color="text-blue-400" />
+        <StatCard label="OpSec" value={`${player.health}%`} color="text-cyan-400" />
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 flex-grow">
-        {/* Market Sidebar */}
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 flex-grow">
         <div className="lg:col-span-4 space-y-6">
-          <div className="bg-slate-950 border border-slate-800 rounded-xl p-4 overflow-hidden relative">
-            <div className="absolute top-0 right-0 p-2">
-               <span className="flex h-2 w-2">
-                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
-                <span className="relative inline-flex rounded-full h-2 w-2 bg-green-500"></span>
-              </span>
-            </div>
-            <h2 className="text-sm font-bold text-slate-500 uppercase tracking-widest mb-4 flex items-center gap-2">
-              <span className="w-1.5 h-1.5 bg-green-500 rounded-full"></span>
-              Live Market: {currentDex?.name}
-            </h2>
-            <div className="space-y-3 overflow-y-auto max-h-[500px] pr-2 scrollbar-hide">
+          <div className="bg-slate-950 border-2 border-slate-800 rounded-2xl p-5 shadow-2xl">
+            <h2 className="text-xs font-black text-slate-500 uppercase mb-6 tracking-widest">DEX: {currentDex?.name}</h2>
+            <div className="space-y-4 max-h-[400px] overflow-y-auto pr-2">
               {COINS.map(coin => {
                 const price = market.prices[coin.id] || 0;
                 return (
-                  <div key={coin.id} className="flex items-center justify-between group">
+                  <div key={coin.id} className="flex items-center justify-between p-2 hover:bg-slate-900/50 rounded-lg">
                     <div>
-                      <p className="font-bold text-white group-hover:text-green-400 transition-colors">{coin.name}</p>
-                      <p className="text-[10px] text-slate-500">${price > 1 ? price.toLocaleString() : price.toFixed(8)}</p>
+                      <p className="font-bold text-sm text-white">{coin.name}</p>
+                      <p className="text-[10px] font-mono text-slate-500">${price > 1 ? price.toLocaleString() : price.toFixed(6)}</p>
                     </div>
-                    <div className="flex gap-2">
-                      <button 
-                        disabled={player.cash < price || walletUsed >= player.walletCapacity}
-                        onClick={() => buyCoin(coin.id)}
-                        className="bg-green-500/10 hover:bg-green-500 text-green-500 hover:text-white px-3 py-1 text-xs font-bold rounded border border-green-500/50 transition-all disabled:opacity-30 disabled:pointer-events-none"
-                      >
-                        BUY
-                      </button>
-                    </div>
+                    <button onClick={() => buyCoin(coin.id)} disabled={player.cash < price || walletUsed >= player.walletCapacity || loading} className="bg-green-500/10 hover:bg-green-500 text-green-500 hover:text-white px-3 py-1.5 text-[10px] font-black rounded-lg border border-green-500/40 disabled:opacity-20">BUY</button>
                   </div>
                 );
               })}
             </div>
           </div>
 
-          <div className="bg-slate-950 border border-slate-800 rounded-xl p-4">
-            <h2 className="text-sm font-bold text-slate-500 uppercase tracking-widest mb-4">Your Inventory</h2>
+          <div className="bg-slate-950 border-2 border-slate-800 rounded-2xl p-5 shadow-2xl">
+            <h2 className="text-xs font-black text-slate-500 uppercase mb-6 tracking-widest">Storage</h2>
             <div className="space-y-3">
-              {Object.entries(player.inventory).length === 0 ? (
-                <p className="text-xs text-slate-600 italic">No assets held.</p>
-              ) : (
-                (Object.entries(player.inventory) as [string, number][]).map(([coinId, qty]) => {
-                  const coin = COINS.find(c => c.id === coinId);
-                  const price = market.prices[coinId] || 0;
-                  return (
-                    <div key={coinId} className="flex items-center justify-between">
-                      <div>
-                        <p className="font-bold text-white">{coin?.name}</p>
-                        <p className="text-[10px] text-slate-500">{qty.toLocaleString()} Units</p>
-                      </div>
-                      <div className="text-right flex items-center gap-4">
-                        <div>
-                           <p className="text-xs font-bold text-green-400">${(qty * price).toLocaleString()}</p>
-                        </div>
-                        <button 
-                          onClick={() => sellCoin(coinId)}
-                          className="bg-red-500/10 hover:bg-red-500 text-red-500 hover:text-white px-3 py-1 text-xs font-bold rounded border border-red-500/50 transition-all"
-                        >
-                          SELL
-                        </button>
-                      </div>
+              {Object.entries(player.inventory).length === 0 ? <p className="text-[10px] text-slate-600 italic">Empty wallet.</p> :
+                (Object.entries(player.inventory) as [string, number][]).map(([id, qty]) => (
+                  <div key={id} className="flex justify-between items-center bg-slate-900/30 p-2 rounded-lg border border-slate-800/50">
+                    <p className="text-xs font-bold text-white">{COINS.find(c => c.id === id)?.name}</p>
+                    <div className="flex items-center gap-3">
+                      {/* Explicitly using qty from the casted Object.entries to ensure arithmetic operation is valid */}
+                      <p className="text-[10px] text-green-400 font-mono">${(qty * (market.prices[id] || 0)).toLocaleString()}</p>
+                      <button onClick={() => sellCoin(id)} className="bg-red-500/10 hover:bg-red-500 text-red-500 hover:text-white px-2 py-1 text-[10px] font-black rounded border border-red-500/40">SELL</button>
                     </div>
-                  );
-                })
-              )}
+                  </div>
+                ))
+              }
             </div>
           </div>
         </div>
 
-        {/* Main Console */}
-        <div className="lg:col-span-8 flex flex-col gap-6">
-          {/* News Terminal */}
-          <div className="bg-black border border-slate-800 rounded-xl p-6 font-mono text-sm relative overflow-hidden">
-            <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-blue-500 via-purple-500 to-green-500"></div>
-            <h3 className="text-slate-500 mb-2 uppercase text-[10px] tracking-widest">Market Intel Feed</h3>
-            {loading ? (
-              <div className="flex items-center gap-3 py-4">
-                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
-                <p className="text-slate-400 animate-pulse">Scanning blockchains for intelligence...</p>
+        <div className="lg:col-span-8 flex flex-col gap-8">
+          <div className="bg-black border-2 border-slate-800 rounded-2xl p-6 font-mono text-xs shadow-2xl">
+            <h3 className="text-slate-600 mb-4 uppercase font-black tracking-widest">Intel Terminal</h3>
+            {loading ? <p className="animate-pulse text-green-500">Syncing blocks...</p> : 
+              <div className="space-y-2 text-slate-300">
+                {market.news.split('\n').map((line, i) => <p key={i}><span className="text-green-500">>></span> {line.replace(/^- /, '')}</p>)}
               </div>
-            ) : (
-              <div className="text-slate-200 leading-relaxed whitespace-pre-wrap">
-                {market.news}
-              </div>
-            )}
+            }
           </div>
 
-          {/* Travel Controls */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-             <div className="bg-slate-950 border border-slate-800 rounded-xl p-4">
-              <h2 className="text-sm font-bold text-slate-500 uppercase tracking-widest mb-4">Travel to DEX</h2>
-              <div className="grid grid-cols-1 gap-
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+            <div className="bg-slate-950 border-2 border-slate-800 rounded-2xl p-6 shadow-2xl">
+              <h2 className="text-xs font-black text-slate-500 uppercase mb-6 tracking-widest">Bridge To</h2>
+              <div className="space-y-2">
+                {DEXES.map(dex => (
+                  <button key={dex.id} disabled={player.currentDexId === dex.id || loading} onClick={() => travel(dex.id)} className={`w-full text-left p-3 rounded-xl border-2 flex justify-between items-center ${player.currentDexId === dex.id ? 'border-green-500 bg-green-500/10' : 'border-slate-800 hover:border-slate-600 bg-slate-900/40'}`}>
+                    <span className="text-xs font-black">{dex.name}</span>
+                    {player.currentDexId === dex.id && <span className="text-[8px] bg-green-500 text-white px-1.5 py-0.5 rounded">ONLINE</span>}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div className="bg-slate-950 border-2 border-slate-800 rounded-2xl p-6 shadow-2xl">
+              <h2 className="text-xs font-black text-slate-500 uppercase mb-6 tracking-widest">Actions</h2>
+              <button onClick={payWhale} disabled={player.debt <= 0 || player.cash <= 0} className="w-full bg-red-600 hover:bg-red-500 text-white font-black py-4 rounded-xl border-b-4 border-red-800 disabled:opacity-20">PAY THE WHALE</button>
+              <div className="mt-6 bg-slate-900/50 p-3 rounded-lg max-h-[100px] overflow-y-auto">
+                <p className="text-[8px] text-slate-600 uppercase mb-2 font-black">History:</p>
+                {player.history.map((h, i) => <p key={i} className="text-[10px] text-slate-500 border-l border-slate-800 pl-2 mb-1">{h}</p>)}
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+export default App;
